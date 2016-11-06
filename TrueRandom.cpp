@@ -4,9 +4,79 @@
  * Copyright (c) 2010 Peter Knight, Tinker.it! All rights reserved.
  */
 
-#include <avr/io.h>
 #include "TrueRandom.h"
 
+#ifdef ARDUINO_ARCH_NRF5
+#include <Arduino.h>
+/* Support for Nordic nRF5 Platform */
+void TrueRandomClass::startRNG(void) {
+  #ifdef NRF51
+  NRF_RNG->POWER = 1;
+  #endif
+  NRF_RNG->TASKS_START = 1;
+  NRF_RNG->EVENTS_VALRDY = 0;
+}
+
+void TrueRandomClass::stopRNG(void) {
+  NRF_RNG->TASKS_STOP = 1;
+  #ifdef NRF51
+  NRF_RNG->POWER = 0;
+  #endif
+}
+char TrueRandomClass::readByte() {
+  char ret;
+  while (NRF_RNG->EVENTS_VALRDY == 0) {
+   yield();
+  }
+  ret = (char)NRF_RNG->VALUE;
+  NRF_RNG->EVENTS_VALRDY = 0;
+  return ret;
+}
+
+int TrueRandomClass::randomBit(void) {
+  // read a new byte when bitpos is 0
+  if (this->random_bit_buffer_pos == 0) {
+      this->random_bit_buffer_pos = 1;
+      this->random_bit_buffer = this->randomByte();
+  }
+  
+  int ret = (this->random_bit_buffer & this->random_bit_buffer_pos) > 0;
+  this->random_bit_buffer_pos = this->random_bit_buffer_pos << 1;
+  return (int)ret;
+}
+
+char TrueRandomClass::randomByte(void) {
+  char ret;
+  this->startRNG();
+  ret = this->readByte();
+  this->stopRNG();
+  return ret;
+}
+
+int TrueRandomClass::rand() {
+  int result;
+  this->memfill((char*)&result,sizeof(result));
+  return result;
+}
+
+long TrueRandomClass::random() {
+  long result;
+  this->memfill((char*)&result,sizeof(result));
+  return result;
+}
+
+void TrueRandomClass::memfill(char* location, int size) {
+  startRNG();
+  for (;size--;) {
+    *location++ = readByte();
+  }
+  stopRNG();
+}
+
+// End ARDUINO_ARCH_NRF5
+#else
+/* Support for Arduino Platform */
+#include <avr/io.h>
 int TrueRandomClass::randomBitRaw(void) {
   uint8_t copyAdmux, copyAdcsra, copyAdcsrb, copyPortc, copyDdrc;
   uint16_t i;
@@ -116,6 +186,13 @@ long TrueRandomClass::random() {
   return result;
 }
 
+void TrueRandomClass::memfill(char* location, int size) {
+  for (;size--;) *location++ = randomByte();
+}
+
+// Arduino platform
+#endif
+
 long TrueRandomClass::random(long howBig) {
   long randomValue;
   long maxRandomValue;
@@ -164,10 +241,6 @@ long TrueRandomClass::random(long howSmall, long howBig) {
   if (howSmall >= howBig) return howSmall;
   long diff = howBig - howSmall;
   return TrueRandomClass::random(diff) + howSmall;
-}
-
-void TrueRandomClass::memfill(char* location, int size) {
-  for (;size--;) *location++ = randomByte();
 }
 
 void TrueRandomClass::mac(uint8_t* macLocation) {
