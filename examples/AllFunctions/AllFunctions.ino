@@ -14,8 +14,8 @@
 char array[10];
 int arrayLength = 10;
 
-char macAddress[6]; // MAC addresses are always 6 bytes long
-char uuidNumber[16]; // UUIDs are always 16 bytes long
+uint8_t macAddress[6]; // MAC addresses are always 6 bytes long
+uint8_t uuidNumber[16]; // UUIDs are always 16 bytes long
 
 void printHex(char number) {
   // Print high hex digit
@@ -24,7 +24,7 @@ void printHex(char number) {
   Serial.print( "0123456789ABCDEF"[number & 15] );
 }
 
-void printMac(char* macAddress) {
+void printMac(uint8_t* macAddress) {
   // Print a MAC address in the form
   //   12:23:34:45:56:67
   int i;
@@ -33,7 +33,7 @@ void printMac(char* macAddress) {
     if (i<5) Serial.print(":");
   }
 }
-void printUuid(char* uuidNumber) {
+void printUuid(uint8_t* uuidNumber) {
   // Print a UUID in the form
   //   12345678-1234-1234-1234-123456789ABC
   int i;
@@ -42,7 +42,7 @@ void printUuid(char* uuidNumber) {
     if (i==6) Serial.print("-");
     if (i==8) Serial.print("-");
     if (i==10) Serial.print("-");
-    printHex(uuid[i]);
+    printHex(uuidNumber[i]);
   }
 }
 
@@ -85,10 +85,10 @@ void setup() {
   Serial.println(TrueRandom.randomByte(),DEC);
 
   // Zero an array
-  for(i=0; i<arrayLength; i++) array[i]=0;
+  for(int i=0; i<arrayLength; i++) array[i]=0;
 
-  Serial.print("An empty array of bytes: ")
-  for(i=0; i<arrayLength; i++) {
+  Serial.print("An empty array of bytes: ");
+  for(int i=0; i<arrayLength; i++) {
     Serial.print(array[i],DEC);
   }
   Serial.println();
@@ -98,8 +98,8 @@ void setup() {
   // random bytes.
   TrueRandom.memfill(array,arrayLength);
   
-  Serial.print("A randomised array of bytes: ")
-  for(i=0; i<arrayLength; i++) {
+  Serial.print("A randomised array of bytes: ");
+  for(int i=0; i<arrayLength; i++) {
     Serial.print(array[i],DEC);
   }
   Serial.println();

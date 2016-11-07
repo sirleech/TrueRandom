@@ -4,3 +4,4 @@ http://code.google.com/p/tinkerit
 
 v1: First release
 v1.1: Bug fix for rand and random functions
+v1.2: Port to nordic nRF5
